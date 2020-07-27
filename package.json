@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/relay",
+    "nm": "nodemon ./bin/relay"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
