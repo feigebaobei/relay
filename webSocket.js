@@ -84,69 +84,30 @@ let getMsgList = (key) => {
     })
   })
 }
-/**
- * 弹出消息
- * @param  {array} dids [接收者did组成的数组]
- * @return {[type]}      [description]
- */
-let popUpMsg = (dids) => {
-  // dids去重
-  dids = [...new Set(dids)]
-  let clients = [...wss.clients]
-  let onlineClient = clients.filter(item => dids.some(subItem => subItem === item.did))
-  // 为每一个在线在did发送消息
-  onlineClient.map(item => {
-    getMsgList(item.did).then(response => {
-      // 若key存在则返回key对应的value。value是数组。
-      // 若key不存在则返回[]。
-      // 即response总是数组。
-      // console.log('发出的消息 response', response)
-      let arr = response.reduce((resObj, cur, index) => {
-        cur = JSON.parse(cur)
-        // cur.messageId = index
-        // cur.messageIndex = index
-        resObj.push(cur)
-        return resObj
-      }, [])
-      item.send(JSON.stringify(arr))
-    }).catch(error => {
-      item.send(JSON.stringify(error))
-    })
-  })
-}
-// 为指定did逐条发送消息
-let popUpMsgOneByOne = (dids) => {
-  let onlineClient = onlineClientByDid(dids)
-  onlineClient.map(client => {
-    getMsgList(client.did).then(msgList => {
-      msgList.reduce((resObj, cur, index) => {
-        cur = JSON.parse(cur)
-        delete cur.receiver
-        resObj.push(cur)
-        return resObj
-      }, []).map(msg => {
-        console.log('msg', msg)
-        client.send(JSON.stringify(msg))
-        if (msg.method === 'receipt') {
-          delMsg(client.did, [msg.messageId])
-        }
-      })
-    }).catch(error => {
-      client.send(createMessage('获取消息队列时出错', [], 'error'))
-    })
-  })
-}
 // 删除消息list中的指定下标的元素
-let delMsgIndex = (key, index) => {
+// let delMsgIndex = (key, index) => {
+//   return new Promise((resolve, reject) => {
+//     redisClient.lindex(key, index, (err, resObj) => {
+//       if (err) {
+//         reject(err)
+//       } else {
+//         redisClient.lrem(key, 0, resObj, (err, resObj) => {
+//           err ? reject(err) : resolve(resObj)
+//         })
+//       }
+//     })
+//   })
+// }
+/**
+ * 删除消息list中的指定元素
+ * @param  {string} key     key
+ * @param  {string} msgItem 要删除的元素
+ * @return {[type]}         [description]
+ */
+let delMsgItem = (key, msgItem) => {
   return new Promise((resolve, reject) => {
-    redisClient.lindex(key, index, (err, resObj) => {
-      if (err) {
-        reject(err)
-      } else {
-        redisClient.lrem(key, index, resObj, (err, resObj) => {
-          err ? reject(err) : resolve(resObj)
-        })
-      }
+    redisClient.lrem(key, 0, msgItem, (err, resObj) => {
+      err ? reject(err) : resolve(resObj)
     })
   })
 }
@@ -215,24 +176,92 @@ let delMsg = (key, msgIds) => {
       res.push(cur)
       return res
     }, [])
-    let msgIndexes = list.filter(item => msgIds.some(subItem => subItem === item.messageId)).reduce((res, cur) => {
-      res.push(cur.messageId)
-      return res
-    }, [])
-    return msgIndexes
+    // let msgIndexes = list.filter(item => msgIds.some(subItem => subItem === item.messageId)).reduce((res, cur) => {
+    //   // console.log('cur', cur)
+    //   // res.push(cur.messageId)
+    //   res.push(cur) // cur 是消息 object
+    //   return res
+    // }, [])
+    // return msgIndexes
+    return list.filter(item => msgIds.some(subItem => subItem === item.messageId))
   })
-  .then(msgIndexes => {
-    // console.log('msgIndexes', msgIndexes)
-    let pArr = msgIndexes.reduce((res, cur) => {
-      res.push(delMsgIndex(key, cur))
+  // .then(msgIndexes => {
+  //   console.log('msgIndexes', msgIndexes)
+  //   let pArr = msgIndexes.reduce((res, cur) => {
+  //     res.push(delMsgIndex(key, cur))
+  //     return res
+  //   }, [])
+  //   // console
+  //   return Promise.all(pArr)
+  // })
+  .then(msgItems => {
+    // console.log('msgItems', msgItems)
+    // msgItems.map(item => {
+    //   delMsgItem(key, JSON.stringify(item))
+    // })
+    let pArr = msgItems.reduce((res, cur) => {
+      res.push(delMsgItem(key, JSON.stringify(cur)))
       return res
     }, [])
     return Promise.all(pArr)
   })
-  // .catch(error => {
-  //   console.log(error)
-  //   return error
-  // })
+  .catch(error => {
+    console.log(error)
+    return error
+  })
+}
+/**
+ * 弹出消息
+ * @param  {array} dids [接收者did组成的数组]
+ * @return {[type]}      [description]
+ */
+let popUpMsg = (dids) => {
+  // dids去重
+  dids = [...new Set(dids)]
+  let clients = [...wss.clients]
+  let onlineClient = clients.filter(item => dids.some(subItem => subItem === item.did))
+  // 为每一个在线在did发送消息
+  onlineClient.map(item => {
+    getMsgList(item.did).then(response => {
+      // 若key存在则返回key对应的value。value是数组。
+      // 若key不存在则返回[]。
+      // 即response总是数组。
+      // console.log('发出的消息 response', response)
+      let arr = response.reduce((resObj, cur, index) => {
+        cur = JSON.parse(cur)
+        // cur.messageId = index
+        // cur.messageIndex = index
+        resObj.push(cur)
+        return resObj
+      }, [])
+      item.send(JSON.stringify(arr))
+    }).catch(error => {
+      item.send(JSON.stringify(error))
+    })
+  })
+}
+// 为指定did逐条发送消息
+let popUpMsgOneByOne = (dids) => {
+  let onlineClient = onlineClientByDid(dids)
+  onlineClient.map(client => {
+    getMsgList(client.did).then(msgList => {
+      msgList.reduce((resObj, cur, index) => {
+        cur = JSON.parse(cur)
+        delete cur.receiver
+        resObj.push(cur)
+        return resObj
+      }, []).map(msg => {
+        // console.log('msg', msg)
+        client.send(JSON.stringify(msg))
+        if (msg.method === 'receipt') {
+          // console.log('2345tytfds')
+          delMsg(client.did, [msg.messageId])
+        }
+      })
+    }).catch(error => {
+      client.send(createMessage('获取消息队列时出错', [], 'error'))
+    })
+  })
 }
 
 wss.on('connection', (ws, req) => {
