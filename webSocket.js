@@ -18,12 +18,12 @@ const WebSocketServer = require('ws').Server,
   //   noServer: true
   // })
 
-// 广播
-wss.broadcast = (data) => {
-  wss.clients.forEach(client => {
-    client.send(data)
-  })
-}
+// // 广播
+// wss.broadcast = (data) => {
+//   wss.clients.forEach(client => {
+//     client.send(data)
+//   })
+// }
 // 创建消息
 let createMessage = (content = '', receiver = [], method = 'message', messageId = [], createTime = new Date().getTime()) => {
   return JSON.stringify({
@@ -265,6 +265,7 @@ let popUpMsgOneByOne = (dids) => {
 }
 
 wss.on('connection', (ws, req) => {
+  // console.log(ws, req)
   // 参数ws是一个websocket的实例
   // 得到did
   let index = req.url.indexOf('did:ttm:')
@@ -290,7 +291,6 @@ wss.on('connection', (ws, req) => {
         if (!infoObj.receiver.length) {
           ws.send('receiver is empty')
         } else {
-          // infoObj.sender = ws.did
           // 完善消息
           infoObj = completeMsg(infoObj, {sender: ws.did})
           // console.log('infoObj', infoObj)
@@ -312,6 +312,7 @@ wss.on('connection', (ws, req) => {
         ws.send(createMessage('', [], 'pong'))
         break
       case 'receipt':
+        console.log('receipt', infoObj)
         let msgIds = infoObj.content.messageId
         if (!msgIds) {
           ws.send('content.messageId is empty')
@@ -339,6 +340,10 @@ wss.on('connection', (ws, req) => {
       case 'close':
         ws.close('4001', 'client request close.')
         break
+      case 'test':
+      console.log('message', message)
+        ws.send(`receive: ${message}`)
+        break
       case 'pong':
       default:
         ws.send('method is error.')
@@ -347,6 +352,5 @@ wss.on('connection', (ws, req) => {
   })
 })
 
-
-// let websocket = new ws('ws://www.lixiaodan.org:9875')
-// console.log('websocket', websocket)
+// module.exports = wss
+module.exports = wss
