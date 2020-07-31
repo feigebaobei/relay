@@ -284,11 +284,13 @@ wss.on('connection', (ws, req) => {
   ws.on('message', (message) => {
     let infoObj = JSON.parse(message)
     // let infoObj = message
-    // console.log('infoObj', infoObj)
+    console.log('infoObj', infoObj)
     switch (infoObj.method) {
       case 'confirm':
       case 'verification':
       case 'pending':
+      case 'error':
+      case 'pendTimeout':
         if (!infoObj.receiver.length) {
           ws.send('receiver is empty')
         } else {
@@ -296,13 +298,6 @@ wss.on('connection', (ws, req) => {
           infoObj = completeMsg(infoObj, {sender: ws.did})
           // console.log('infoObj', infoObj)
           pressInMsg(infoObj.receiver, JSON.stringify(infoObj))
-          // .then(response => {
-          //   console.log('response', response)
-          //   // ws.send(JSON.stringify(response))
-          // }).catch(error => {
-          //   console.log('error', error)
-          //   // ws.send(error)
-          // })
           .then(() => {
             // popUpMsg(infoObj.receiver)
             popUpMsgOneByOne(infoObj.receiver)
@@ -313,7 +308,7 @@ wss.on('connection', (ws, req) => {
         ws.send(createMessage('', [], 'pong'))
         break
       case 'receipt':
-        console.log('receipt', infoObj)
+        // console.log('receipt', infoObj)
         let msgIds = infoObj.content.messageId
         if (!msgIds) {
           ws.send('content.messageId is empty')
