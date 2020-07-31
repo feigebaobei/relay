@@ -288,6 +288,7 @@ wss.on('connection', (ws, req) => {
     switch (infoObj.method) {
       case 'confirm':
       case 'verification':
+      case 'pending':
         if (!infoObj.receiver.length) {
           ws.send('receiver is empty')
         } else {
