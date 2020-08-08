@@ -38,6 +38,7 @@ let createMessage = (content = '', receiver = [], method = 'message', messageId 
 let onlineClientByDid = (dids) => {
   dids = [...new Set(dids)]
   let clients = [...wss.clients]
+  // console.log(clients)
   let onlineClient = clients.filter(item => dids.some(subItem => subItem === item.did))
   return onlineClient
 }
@@ -242,7 +243,9 @@ let popUpMsg = (dids) => {
 }
 // 为指定did逐条发送消息
 let popUpMsgOneByOne = (dids) => {
+  console.log('popUpMsgOneByOne', dids)
   let onlineClient = onlineClientByDid(dids)
+  console.log('popUpMsgOneByOne', onlineClient)
   onlineClient.map(client => {
     getMsgList(client.did).then(msgList => {
       msgList.reduce((resObj, cur, index) => {
@@ -270,17 +273,25 @@ wss.on('connection', (ws, req) => {
   // 得到did
   let index = req.url.indexOf('did:ttm:')
   let did = req.url.slice(index, index + 70)
+  // console.log(index, did)
   // 检查did是否正确
   if (did.length != 70) {
-    // ws.send('did不正确')
-    // ws.close()
-    ws.close('4001', 'did不正确')
+    ws.send('did不正确')
+    ws.close()
+    // ws.close('4001', 'did不正确')
   }
   // 保持同一did只有一个client
   onlyOneOnline(did, wss, ws)
   // 发送消息队列
   // popUpMsg([ws.did])
   popUpMsgOneByOne([ws.did])
+
+
+  // let c = onlineClientByDid(did)
+  // console.log(c)
+
+
+
   ws.on('message', (message) => {
     let infoObj = JSON.parse(message)
     // let infoObj = message
@@ -291,6 +302,8 @@ wss.on('connection', (ws, req) => {
       case 'pending':
       case 'error':
       case 'pendTimeout':
+      case 'auth':
+      case 'bind':
         if (!infoObj.receiver.length) {
           ws.send('receiver is empty')
         } else {
@@ -301,6 +314,9 @@ wss.on('connection', (ws, req) => {
           .then(() => {
             // popUpMsg(infoObj.receiver)
             popUpMsgOneByOne(infoObj.receiver)
+          })
+          .catch(() => {
+            console.log('压入消息失败')
           })
         }
         break
@@ -334,7 +350,8 @@ wss.on('connection', (ws, req) => {
         ws.send(createMessage(''))
         break
       case 'close':
-        ws.close('4001', 'client request close.')
+        // ws.close('4001', 'client request close.')
+        ws.close()
         break
       case 'test':
       console.log('message', message)
