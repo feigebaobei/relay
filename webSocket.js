@@ -243,9 +243,9 @@ let popUpMsg = (dids) => {
 }
 // 为指定did逐条发送消息
 let popUpMsgOneByOne = (dids) => {
-  console.log('popUpMsgOneByOne', dids)
+  // console.log('popUpMsgOneByOne', dids)
   let onlineClient = onlineClientByDid(dids)
-  console.log('popUpMsgOneByOne', onlineClient)
+  // console.log('popUpMsgOneByOne', onlineClient)
   onlineClient.map(client => {
     getMsgList(client.did).then(msgList => {
       msgList.reduce((resObj, cur, index) => {
@@ -295,7 +295,7 @@ wss.on('connection', (ws, req) => {
   ws.on('message', (message) => {
     let infoObj = JSON.parse(message)
     // let infoObj = message
-    console.log('infoObj', infoObj)
+    // console.log('infoObj', infoObj)
     switch (infoObj.method) {
       case 'confirm':
       case 'verification':
@@ -325,7 +325,8 @@ wss.on('connection', (ws, req) => {
         break
       case 'receipt':
         // console.log('receipt', infoObj)
-        let msgIds = infoObj.content.messageId
+        // let msgIds = infoObj.content.messageId
+        let msgIds = infoObj.messageId
         if (!msgIds) {
           ws.send('content.messageId is empty')
         }
@@ -354,7 +355,7 @@ wss.on('connection', (ws, req) => {
         ws.close()
         break
       case 'test':
-      console.log('message', message)
+      // console.log('message', message)
         ws.send(`receive: ${message}`)
         break
       case 'pong':
