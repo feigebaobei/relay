@@ -1,5 +1,5 @@
 // var express = require('express');
-// var utils = require('./lib/utils.js')
+var utils = require('./lib/utils.js')
 // var tokenSDKServer = require('token-sdk-server')
 var config = require('./lib/config')
 const redisClient = require('./redisClient.js')
@@ -25,7 +25,7 @@ const WebSocketServer = require('ws').Server,
 //   })
 // }
 // 创建消息
-let createMessage = (content = '', receiver = [], method = 'message', messageId = [], createTime = new Date().getTime()) => {
+let createMessage = (content = '', receiver = [], method = 'message', messageId = utils.getUuid(), createTime = new Date().getTime()) => {
   return JSON.stringify({
     method: method,
     content: content,
@@ -52,7 +52,8 @@ let onlyOneOnline = (did, wss, ws) => {
     return item.did === did
   })
   if (sameDid.length > 1) {
-    sameDid[0].send('相同did不能多点登录')
+    // sameDid[0].send('相同did不能多点登录')
+    sameDid[0].send(createMessage('相同did不能多点登录', [], 'error'))
     sameDid[0].close()
   } else {
     // 无操作
@@ -297,13 +298,13 @@ wss.on('connection', (ws, req) => {
     // let infoObj = message
     // console.log('infoObj', infoObj)
     switch (infoObj.method) {
-      case 'confirm':
-      case 'verification':
-      case 'pending':
-      case 'error':
-      case 'pendTimeout':
-      case 'auth':
-      case 'bind':
+      case 'confirm':      // 签名
+      case 'verification': // 查验
+      case 'pending':      // 待办事项
+      case 'error':        // 错误
+      case 'pendTimeout':  // 待办事项
+      case 'auth':         // 验证
+      case 'bind':         // 绑定
         if (!infoObj.receiver.length) {
           ws.send('receiver is empty')
         } else {
@@ -323,7 +324,7 @@ wss.on('connection', (ws, req) => {
       case 'ping':
         ws.send(createMessage('', [], 'pong'))
         break
-      case 'receipt':
+      case 'receipt':     // 接收到消息
         // console.log('receipt', infoObj)
         // let msgIds = infoObj.content.messageId
         let msgIds = infoObj.messageId
@@ -347,17 +348,14 @@ wss.on('connection', (ws, req) => {
         break
       case 'leave':
         break
-      case 'system':
-        ws.send(createMessage(''))
-        break
       case 'close':
-        // ws.close('4001', 'client request close.')
         ws.close()
         break
       case 'test':
       // console.log('message', message)
         ws.send(`receive: ${message}`)
         break
+      case 'system':
       case 'pong':
       default:
         ws.send('method is error.')
