@@ -53,7 +53,7 @@ let onlyOneOnline = (did, wss, ws) => {
   })
   if (sameDid.length > 1) {
     // sameDid[0].send('相同did不能多点登录')
-    sameDid[0].send(createMessage('相同did不能多点登录', [], 'error'))
+    sameDid[0].send(createMessage({type: 'error', message: '相同did不能多点登录', error: new Error('相同did不能多点登录')}, [], 'error'))
     sameDid[0].close()
   } else {
     // 无操作
@@ -263,7 +263,7 @@ let popUpMsgOneByOne = (dids) => {
         }
       })
     }).catch(error => {
-      client.send(createMessage('获取消息队列时出错', [], 'error'))
+      client.send(createMessage({type: 'error', message: '相同did不能多点登录', error: new Error('相同did不能多点登录')}, [], 'error'))
     })
   })
 }
