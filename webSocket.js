@@ -255,7 +255,7 @@ let popUpMsgOneByOne = (dids) => {
         resObj.push(cur)
         return resObj
       }, []).map(msg => {
-        // console.log('msg', msg)
+        console.log('发出的消息', msg)
         client.send(JSON.stringify(msg))
         if (msg.method === 'receipt') {
           // console.log('2345tytfds')
@@ -296,7 +296,7 @@ wss.on('connection', (ws, req) => {
   ws.on('message', (message) => {
     let infoObj = JSON.parse(message)
     // let infoObj = message
-    // console.log('infoObj', infoObj)
+    console.log('infoObj', infoObj)
     switch (infoObj.method) {
       case 'confirm':      // 签名
       case 'verification': // 查验
