@@ -255,7 +255,7 @@ let popUpMsgOneByOne = (dids) => {
         resObj.push(cur)
         return resObj
       }, []).map(msg => {
-        console.log('发出的消息', msg)
+        // console.log('发出的消息', msg)
         client.send(JSON.stringify(msg))
         if (msg.method === 'receipt') {
           // console.log('2345tytfds')
@@ -296,13 +296,13 @@ wss.on('connection', (ws, req) => {
   ws.on('message', (message) => {
     let infoObj = JSON.parse(message)
     // let infoObj = message
-    console.log('infoObj', infoObj)
+    // console.log('infoObj', infoObj)
     switch (infoObj.method) {
       case 'confirm':      // 签名
       case 'verification': // 查验
-      case 'pending':      // 待办事项
-      case 'error':        // 错误
-      case 'pendTimeout':  // 待办事项
+      // case 'pending':      // 待办事项
+      // case 'error':        // 错误
+      // case 'pendTimeout':  // 待办事项
       case 'auth':         // 验证
       case 'bind':         // 绑定
         if (!infoObj.receiver.length) {
@@ -321,20 +321,29 @@ wss.on('connection', (ws, req) => {
           })
         }
         break
-      case 'ping':
-        ws.send(createMessage('', [], 'pong'))
-        break
+      // case 'ping':
+      //   ws.send(createMessage('', [], 'pong'))
+      //   break
       case 'receipt':     // 接收到消息
         // console.log('receipt', infoObj)
-        // let msgIds = infoObj.content.messageId
-        let msgIds = infoObj.messageId
+        let msgIds = infoObj.content.messageId // 需要删除的消息id
+        // let msgIds = infoObj.messageId // 当前消息的id
         if (!msgIds) {
-          ws.send('content.messageId is empty')
-        }
-        msgIds = [msgIds]
-        if (!infoObj.receiver.length) {
-          ws.send('receiver is empty')
+          // ws.send('content.messageId is empty')
+          ws.send(createMessage({
+            type: 'error',
+            message: config.errorMap.msgIdEmpty.message,
+            error: new Error(config.errorMap.msgIdEmpty.message)
+          }, [], 'receipt'))
+        } else if (!infoObj.receiver.length) {
+          // ws.send('receiver is empty')
+          ws.send(createMessage({
+            type: 'error',
+            message: config.errorMap.receiverEmpty.messageId,
+            error: new Error(config.errorMap.receiverEmpty.messageId)
+          }, [], 'receipt'))
         } else {
+          msgIds = [msgIds]
           delMsg(ws.did, msgIds)
           infoObj = completeMsg(infoObj, {sender: ws.did})
           // console.log('infoObj', infoObj)
@@ -343,22 +352,27 @@ wss.on('connection', (ws, req) => {
           })
         }
         break
-      case 'unread':
-        // 暂时无操作
-        break
-      case 'leave':
-        break
-      case 'close':
-        ws.close()
-        break
+      // case 'unread':
+      //   // 暂时无操作
+      //   break
+      // case 'leave':
+      //   break
+      // case 'close':
+      //   ws.close()
+      //   break
       case 'test':
       // console.log('message', message)
         ws.send(`receive: ${message}`)
         break
-      case 'system':
-      case 'pong':
+      // case 'system':
+      // case 'pong':
       default:
-        ws.send('method is error.')
+        // ws.send('method is error.')
+        ws.send({
+          type: 'error',
+          message: config.errorMap.method.message,
+          error: new Error(config.errorMap.method.message)
+        }, [], 'receipt')
         break
     }
   })
